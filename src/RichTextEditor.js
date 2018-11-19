@@ -1,9 +1,9 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import WebViewBridge from 'react-native-webview-bridge-updated';
-import {InjectedMessageHandler} from './WebviewMessageHandler';
-import {actions, messages} from './const';
-import {Modal, View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, PixelRatio, Keyboard, Dimensions} from 'react-native';
+import { InjectedMessageHandler } from './WebviewMessageHandler';
+import { actions, messages } from './const';
+import { Modal, View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, PixelRatio } from 'react-native';
 
 const injectScript = `
   (function () {
@@ -34,11 +34,6 @@ export default class RichTextEditor extends Component {
 
   constructor(props) {
     super(props);
-    this._sendAction = this._sendAction.bind(this);
-    this.registerToolbar = this.registerToolbar.bind(this);
-    this.onBridgeMessage = this.onBridgeMessage.bind(this);
-    this._onKeyboardWillShow = this._onKeyboardWillShow.bind(this);
-    this._onKeyboardWillHide = this._onKeyboardWillHide.bind(this);
     this.state = {
       selectionChangeListeners: [],
       onChange: [],
@@ -46,55 +41,11 @@ export default class RichTextEditor extends Component {
       linkInitialUrl: '',
       linkTitle: '',
       linkUrl: '',
-      keyboardHeight: 0
     };
     this._selectedTextChangeListeners = [];
   }
 
-  componentWillMount() {
-    if(PlatformIOS) {
-      this.keyboardEventListeners = [
-        Keyboard.addListener('keyboardWillShow', this._onKeyboardWillShow),
-        Keyboard.addListener('keyboardWillHide', this._onKeyboardWillHide)
-      ];
-    } else {
-      this.keyboardEventListeners = [
-        Keyboard.addListener('keyboardDidShow', this._onKeyboardWillShow),
-        Keyboard.addListener('keyboardDidHide', this._onKeyboardWillHide)
-      ];
-    }
-  }
-
-  componentWillUnmount() {
-    this.keyboardEventListeners.forEach((eventListener) => eventListener.remove());
-  }
-
-  _onKeyboardWillShow(event) {
-    console.log('!!!!', event);
-    const newKeyboardHeight = event.endCoordinates.height;
-    if (this.state.keyboardHeight === newKeyboardHeight) {
-      return;
-    }
-    if (newKeyboardHeight) {
-      this.setEditorAvailableHeightBasedOnKeyboardHeight(newKeyboardHeight);
-    }
-    this.setState({keyboardHeight: newKeyboardHeight});
-  }
-
-  _onKeyboardWillHide(event) {
-    this.setState({keyboardHeight: 0});
-  }
-
-  setEditorAvailableHeightBasedOnKeyboardHeight(keyboardHeight) {
-    const {top = 0, bottom = 0} = this.props.contentInset;
-    const {marginTop = 0, marginBottom = 0} = this.props.style;
-    const spacing = marginTop + marginBottom + top + bottom;
-
-    const editorAvailableHeight = Dimensions.get('window').height - keyboardHeight - spacing;
-    this.setEditorHeight(editorAvailableHeight);
-  }
-
-  onBridgeMessage(str){
+  onBridgeMessage = (str) => {
     try {
       const message = JSON.parse(str);
 
@@ -160,14 +111,14 @@ export default class RichTextEditor extends Component {
           break;
         case messages.LINK_TOUCHED:
           this.prepareInsert();
-          const {title, url} = message.data;
+          const { title, url } = message.data;
           this.showLinkDialog(title, url);
           break;
         case messages.LOG:
-          console.log('FROM ZSS', message.data);
+          // console.log('FROM ZSS', message.data);
           break;
         case messages.SCROLL:
-          this.webviewBridge.setNativeProps({contentOffset: {y: message.data}});
+          this.webviewBridge.setNativeProps({ contentOffset: { y: message.data } });
           break;
         case messages.TITLE_FOCUSED:
           this.titleFocusHandler && this.titleFocusHandler();
@@ -195,49 +146,49 @@ export default class RichTextEditor extends Component {
           break;
         }
       }
-    } catch(e) {
+    } catch (e) {
       //alert('NON JSON MESSAGE');
     }
   }
 
-  _renderLinkModal() {
+  _renderLinkModal = () => {
     return (
-        <Modal
-            animationType={"fade"}
-            transparent
-            visible={this.state.showLinkDialog}
-            onRequestClose={() => this.setState({showLinkDialog: false})}
-        >
-          <View style={styles.modal}>
-            <View style={[styles.innerModal, {marginBottom: PlatformIOS ? this.state.keyboardHeight : 0}]}>
-              <Text style={styles.inputTitle}>Title</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                    style={styles.input}
-                    onChangeText={(text) => this.setState({linkTitle: text})}
-                    value={this.state.linkTitle}
-                />
-              </View>
-              <Text style={[styles.inputTitle ,{marginTop: 10}]}>URL</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                    style={styles.input}
-                    onChangeText={(text) => this.setState({linkUrl: text})}
-                    value={this.state.linkUrl}
-                    keyboardType="url"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                />
-              </View>
-              {PlatformIOS && <View style={styles.lineSeparator}/>}
-              {this._renderModalButtons()}
+      <Modal
+        animationType={"fade"}
+        transparent
+        visible={this.state.showLinkDialog}
+        onRequestClose={() => this.setState({ showLinkDialog: false })}
+      >
+        <View style={styles.modal}>
+          <View style={[styles.innerModal, { marginBottom: 0 }]}>
+            <Text style={styles.inputTitle}>Title</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                onChangeText={(text) => this.setState({ linkTitle: text })}
+                value={this.state.linkTitle}
+              />
             </View>
+            <Text style={[styles.inputTitle, { marginTop: 10 }]}>URL</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                onChangeText={(text) => this.setState({ linkUrl: text })}
+                value={this.state.linkUrl}
+                keyboardType="url"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+            {PlatformIOS && <View style={styles.lineSeparator} />}
+            {this._renderModalButtons()}
           </View>
-        </Modal>
+        </View>
+      </Modal>
     );
   }
 
-  _hideModal() {
+  _hideModal = () => {
     this.setState({
       showLinkDialog: false,
       linkInitialUrl: '',
@@ -246,34 +197,34 @@ export default class RichTextEditor extends Component {
     })
   }
 
-  _renderModalButtons() {
+  _renderModalButtons = () => {
     const insertUpdateDisabled = this.state.linkTitle.trim().length <= 0 || this.state.linkUrl.trim().length <= 0;
-    const containerPlatformStyle = PlatformIOS ? {justifyContent: 'space-between'} : {paddingTop: 15};
-    const buttonPlatformStyle = PlatformIOS ? {flex: 1, height: 45, justifyContent: 'center'} : {};
+    const containerPlatformStyle = PlatformIOS ? { justifyContent: 'space-between' } : { paddingTop: 15 };
+    const buttonPlatformStyle = PlatformIOS ? { flex: 1, height: 45, justifyContent: 'center' } : {};
     return (
-      <View style={[{alignSelf: 'stretch', flexDirection: 'row'}, containerPlatformStyle]}>
-        {!PlatformIOS && <View style={{flex: 1}}/>}
+      <View style={[{ alignSelf: 'stretch', flexDirection: 'row' }, containerPlatformStyle]}>
+        {!PlatformIOS && <View style={{ flex: 1 }} />}
         <TouchableOpacity
-            onPress={() => this._hideModal()}
-            style={buttonPlatformStyle}
+          onPress={() => this._hideModal()}
+          style={buttonPlatformStyle}
         >
-          <Text style={[styles.button, {paddingRight: 10}]}>
+          <Text style={[styles.button, { paddingRight: 10 }]}>
             {this._upperCaseButtonTextIfNeeded('Cancel')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-            onPress={() => {
-              if (this._linkIsNew()) {
-                this.insertLink(this.state.linkUrl, this.state.linkTitle);
-              } else {
-                this.updateLink(this.state.linkUrl, this.state.linkTitle);
-              }
-              this._hideModal();
-            }}
-            disabled={insertUpdateDisabled}
-            style={buttonPlatformStyle}
+          onPress={() => {
+            if (this._linkIsNew()) {
+              this.insertLink(this.state.linkUrl, this.state.linkTitle);
+            } else {
+              this.updateLink(this.state.linkUrl, this.state.linkTitle);
+            }
+            this._hideModal();
+          }}
+          disabled={insertUpdateDisabled}
+          style={buttonPlatformStyle}
         >
-          <Text style={[styles.button, {opacity: insertUpdateDisabled ? 0.5 : 1}]}>
+          <Text style={[styles.button, { opacity: insertUpdateDisabled ? 0.5 : 1 }]}>
             {this._upperCaseButtonTextIfNeeded(this._linkIsNew() ? 'Insert' : 'Update')}
           </Text>
         </TouchableOpacity>
@@ -281,11 +232,11 @@ export default class RichTextEditor extends Component {
     );
   }
 
-  _linkIsNew() {
+  _linkIsNew = () => {
     return !this.state.linkInitialUrl;
   }
 
-  _upperCaseButtonTextIfNeeded(buttonText) {
+  _upperCaseButtonTextIfNeeded = (buttonText) => {
     return PlatformIOS ? buttonText : buttonText.toUpperCase();
   }
 
@@ -293,12 +244,12 @@ export default class RichTextEditor extends Component {
     //in release build, external html files in Android can't be required, so they must be placed in the assets folder and accessed via uri
     const pageSource = PlatformIOS ? require('./editor.html') : { uri: 'file:///android_asset/editor.html' };
     return (
-      <View style={{flex: 1}}>
+      <View style={{ flex: 1 }}>
         <WebViewBridge
           {...this.props}
           hideKeyboardAccessoryView={true}
           keyboardDisplayRequiresUserAction={false}
-          ref={(r) => {this.webviewBridge = r}}
+          ref={(r) => { this.webviewBridge = r }}
           onBridgeMessage={(message) => this.onBridgeMessage(message)}
           injectedJavaScript={injectScript}
           source={pageSource}
@@ -309,7 +260,7 @@ export default class RichTextEditor extends Component {
     );
   }
 
-  escapeJSONString = function(string) {
+  escapeJSONString = (string) => {
     return string
       .replace(/[\\]/g, '\\\\')
       .replace(/[\"]/g, '\\\"')
@@ -322,8 +273,8 @@ export default class RichTextEditor extends Component {
       .replace(/[\t]/g, '\\t');
   };
 
-  _sendAction(action, data) {
-    let jsonString = JSON.stringify({type: action, data});
+  _sendAction = (action, data) => {
+    let jsonString = JSON.stringify({ type: action, data });
     jsonString = this.escapeJSONString(jsonString);
     this.webviewBridge.sendToBridge(jsonString);
   }
@@ -331,7 +282,7 @@ export default class RichTextEditor extends Component {
   //-------------------------------------------------------------------------------
   //--------------- Public API
 
-  showLinkDialog(optionalTitle = '', optionalUrl = '') {
+  showLinkDialog = (optionalTitle = '', optionalUrl = '') => {
     this.setState({
       linkInitialUrl: optionalUrl,
       linkTitle: optionalTitle,
@@ -340,43 +291,43 @@ export default class RichTextEditor extends Component {
     });
   }
 
-  focusTitle() {
+  focusTitle = () => {
     this._sendAction(actions.focusTitle);
   }
 
-  focusContent() {
+  focusContent = () => {
     this._sendAction(actions.focusContent);
   }
 
-  registerToolbar(listener) {
+  registerToolbar = (listener) => {
     this.setState({
       selectionChangeListeners: [...this.state.selectionChangeListeners, listener]
     });
   }
 
-  enableOnChange() {
+  enableOnChange = () => {
     this._sendAction(actions.enableOnChange);
   }
 
-  registerContentChangeListener(listener) {
+  registerContentChangeListener = (listener) => {
     this.setState({
       onChange: [...this.state.onChange, listener]
     });
   }
 
-  setTitleHTML(html) {
+  setTitleHTML = (html) => {
     this._sendAction(actions.setTitleHtml, html);
   }
-  hideTitle() {
+  hideTitle = () => {
     this._sendAction(actions.hideTitle);
   }
-  showTitle() {
+  showTitle = () => {
     this._sendAction(actions.showTitle);
   }
   toggleTitle() {
     this._sendAction(actions.toggleTitle);
   }
-  setContentHTML(html) {
+  setContentHTML = (html) => {
     this._sendAction(actions.setContentHtml, html);
   }
 
@@ -384,7 +335,7 @@ export default class RichTextEditor extends Component {
     this._sendAction(actions.blurTitleEditor);
   }
 
-  blurContentEditor() {
+  blurContentEditor = () => {
     this._sendAction(actions.blurContentEditor);
   }
 
@@ -457,11 +408,11 @@ export default class RichTextEditor extends Component {
   }
 
   insertLink(url, title) {
-    this._sendAction(actions.insertLink, {url, title});
+    this._sendAction(actions.insertLink, { url, title });
   }
 
   updateLink(url, title) {
-    this._sendAction(actions.updateLink, {url, title});
+    this._sendAction(actions.updateLink, { url, title });
   }
 
   insertImage(attributes) {
